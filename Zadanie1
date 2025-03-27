@@ -1,0 +1,143 @@
+using System;
+
+class Osobnik{
+    public string Cb;
+    public double[] Parametr;
+    public double Ocena;
+
+    public Osobnik(string cb, double[] parametr, double ocena){
+        Cb = cb;
+        Parametr = parametr;
+        Ocena = ocena;
+    }
+}
+
+class Program{
+    static int LBnP = 5;
+    static double ZDMin = 0;
+    static double ZDMax = 100;
+    static double ZD = ZDMax - ZDMin;
+    static int TurRozm = 3;
+    static int populacja = 55;
+    static int parametry = 2;
+
+    static void Main(){
+        Random rand = new Random();
+
+        int generacje = 200;
+
+        static double Dekodowanie(string cb){
+            int ctmp = 0;
+            int b = 0;
+            for (int p = LBnP - 1; p >= 0; p--){
+                ctmp += int.Parse(cb[p].ToString()) * (int)Math.Pow(2, b);
+                b++;
+            }
+            double pm = ZDMin + ctmp / (Math.Pow(2, LBnP) - 1) * ZD;
+            return pm;
+        }
+
+        static Osobnik Turniej(Osobnik[] osobniki){
+            Random rand = new Random();
+            Osobnik[] sklad = new Osobnik[TurRozm];
+            for (int i = 0; i < TurRozm; i++){
+                int index = rand.Next(osobniki.Length);
+                sklad[i] = osobniki[index];
+            }
+            var os_wybr = sklad[0];
+            for (int i = 1; i < TurRozm; i++){
+                if (sklad[i].Ocena > os_wybr.Ocena){
+                    os_wybr = sklad[i];
+                }
+            }
+            return new Osobnik(os_wybr.Cb, os_wybr.Parametr, os_wybr.Ocena);
+        }
+
+        static Osobnik[] Mutacja(Osobnik[] nowa_pula){
+            Random rand = new Random();
+            for (int i = 0; i < populacja - 1; i++){
+                int b_punkt = rand.Next(0, LBnP * parametry);
+                string cb = nowa_pula[i].Cb;
+                char[] mutacja_cb = cb.ToCharArray();
+                if (mutacja_cb[b_punkt] == '0'){
+                    mutacja_cb[b_punkt] = '1';
+                } else {
+                    mutacja_cb[b_punkt] = '0';
+                }
+                nowa_pula[i].Cb = new string(mutacja_cb);
+            }
+            return nowa_pula;
+        }
+
+        static double srednia(Osobnik[] osobniki){
+            double suma = 0;
+            for (int i = 0; i < populacja; i++){
+                suma += osobniki[i].Ocena;
+            }
+            return suma / populacja;
+        }
+
+        static Osobnik najlepszy(Osobnik[] osobniki){
+            var najlepszy = osobniki[0];
+            for (int i = 1; i < populacja; i++){
+                if (osobniki[i].Ocena > najlepszy.Ocena){
+                    najlepszy = osobniki[i];
+                }
+            }
+            return najlepszy;
+        }
+
+        // tworzenie populacji
+        Osobnik[] osobniki = new Osobnik[populacja];
+        for (int i = 0; i < populacja; i++){
+            string cb = "";
+            for (int j = 0; j < LBnP * parametry; j++){
+                cb += rand.Next(0, 2);
+            }
+            osobniki[i] = new Osobnik(cb, new double[parametry], new double());
+        }
+
+        // dekodowanie x1 x2
+        // obliczanie funkcji przystosowania
+        for (int i = 0; i < populacja; i++){
+            for (int j = 0; j < parametry; j++){
+                osobniki[i].Parametr[j] = Math.Round(Dekodowanie(osobniki[i].Cb.Substring(j * LBnP, LBnP)), 2);
+            }
+            osobniki[i].Ocena = Math.Round(Math.Sin(osobniki[i].Parametr[0] * 0.05) + Math.Sin(osobniki[i].Parametr[1] * 0.05) + 0.4 * Math.Sin(osobniki[i].Parametr[0] * 0.15) * Math.Sin(osobniki[i].Parametr[1] * 0.15), 2);
+        }
+
+        Console.WriteLine("Generacja 0:");
+        Console.WriteLine("Najlepszy osobnik: "+najlepszy(osobniki).Ocena);
+        Console.WriteLine("Srednia ocena: " + Math.Round(srednia(osobniki), 2));
+
+        for (int g = 0; g < generacje; g++){
+            Console.WriteLine($"\nGeneracja {g + 1}:");
+
+            // nowa pula
+            Osobnik[] nowa_pula = new Osobnik[populacja];
+
+            // turniej
+            for (int i = 0; i < populacja - 1; i++){
+                nowa_pula[i] = Turniej(osobniki);
+            }
+
+            // mutacja
+            nowa_pula = Mutacja(nowa_pula);
+
+            // hot deck
+            nowa_pula[populacja - 1] = najlepszy(osobniki);
+
+            // wymiana starej na nowa
+            osobniki = nowa_pula;
+
+            for (int i = 0; i < populacja; i++){
+                for (int j = 0; j < parametry; j++){
+                    osobniki[i].Parametr[j] = Math.Round(Dekodowanie(osobniki[i].Cb.Substring(j * LBnP, LBnP)), 2);
+                }
+                osobniki[i].Ocena = Math.Round(Math.Sin(osobniki[i].Parametr[0] * 0.05) + Math.Sin(osobniki[i].Parametr[1] * 0.05) + 0.4 * Math.Sin(osobniki[i].Parametr[0] * 0.15) * Math.Sin(osobniki[i].Parametr[1] * 0.15), 2);
+            }
+            Console.WriteLine("Najlepszy osobnik: "+najlepszy(osobniki).Ocena);
+            Console.WriteLine("Srednia ocena: " + Math.Round(srednia(osobniki), 2));
+        }
+    }
+}
