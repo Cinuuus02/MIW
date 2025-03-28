@@ -1,0 +1,87 @@
+using System;
+
+class Osobnik{
+    public string Cb;
+    public double[] Parametr;
+    public double Ocena;
+
+    public Osobnik(string cb, double[] parametr, double ocena){
+        Cb = cb;
+        Parametr = parametr;
+        Ocena = ocena;
+    }
+}
+
+class Program{
+    static int LBnP = 4;
+    static double ZDMin = 0;
+    static double ZDMax = 3;
+    static double ZD = ZDMax - ZDMin;
+    static int TurRozm = 3;
+    static int populacja = 13;
+    static int parametry = 3;
+
+    static double[] x = {-1.00000, -0.80000, -0.60000, -0.40000, -0.20000, 0.00000, 0.20000, 0.40000, 0.60000, 0.80000, 1.00000, 1.20000, 1.40000, 1.60000, 1.80000, 2.00000, 2.20000, 2.40000, 2.60000, 2.80000, 3.00000, 3.20000, 3.40000, 3.60000, 3.80000, 4.00000, 4.20000, 4.40000, 4.60000, 4.80000, 5.00000, 5.20000, 5.40000, 5.60000, 5.80000, 6.00000};
+    static double[] y = {0.59554, 0.58813, 0.64181, 0.68587, 0.44783, 0.40836, 0.38241, -0.05933, -0.12478, -0.36847, -0.39935, -0.50881, -0.63435, -0.59979, -0.64107, -0.51808, -0.38127, -0.12349, -0.09624, 0.27893, 0.48965, 0.33089, 0.70615, 0.53342, 0.43321, 0.64790, 0.48834, 0.18440, -0.02389, -0.10261, -0.33594, -0.35101, -0.62027, -0.55719, -0.66377, -0.62740};
+
+    static void Main(){
+        Random rand = new Random();
+
+
+        static double Dekodowanie(string cb){
+            int ctmp = 0;
+            int b = 0;
+            for (int p = LBnP - 1; p >= 0; p--){
+                ctmp += int.Parse(cb[p].ToString()) * (int)Math.Pow(2, b);
+                b++;
+            }
+            double pm = ZDMin + ctmp / (Math.Pow(2, LBnP) - 1) * ZD;
+            return pm;
+        }
+
+        static double srednia(Osobnik[] osobniki){
+            double suma = 0;
+            for (int i = 0; i < populacja; i++){
+                suma += osobniki[i].Ocena;
+            }
+            return suma / populacja;
+        }
+
+        static Osobnik najlepszy(Osobnik[] osobniki){
+            var najlepszy = osobniki[0];
+            for (int i = 1; i < populacja; i++){
+                if (osobniki[i].Ocena > najlepszy.Ocena){
+                    najlepszy = osobniki[i];
+                }
+            }
+            return najlepszy;
+        }
+
+        // tworzenie populacji
+        Osobnik[] osobniki = new Osobnik[populacja];
+        for (int i = 0; i < populacja; i++){
+            string cb = "";
+            for (int j = 0; j < LBnP * parametry; j++){
+                cb += rand.Next(0, 2);
+            }
+            osobniki[i] = new Osobnik(cb, new double[parametry], new double());
+        }
+
+        // dekodowanie pa pb pc
+        // obliczanie funkcji przystosowania
+        for (int i = 0; i < populacja; i++){
+            for (int j = 0; j < parametry; j++){
+                osobniki[i].Parametr[j] = Math.Round(Dekodowanie(osobniki[i].Cb.Substring(j * LBnP, LBnP)), 2);
+            }
+            for (int j = 0; j < x.Length; j++){
+                double f_x = osobniki[i].Parametr[0]*Math.Sin(osobniki[i].Parametr[1]*x[j]+osobniki[i].Parametr[2]);
+                osobniki[i].Ocena += Math.Pow(y[j] - f_x, 2);
+            }
+            
+        }
+
+        Console.WriteLine("Generacja 0:");
+        Console.WriteLine("Najlepszy osobnik: "+najlepszy(osobniki).Ocena);
+        Console.WriteLine("Srednia ocena: " + Math.Round(srednia(osobniki), 2));
+    }
+}
