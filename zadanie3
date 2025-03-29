@@ -1,0 +1,20 @@
+using System;
+
+class Program{
+    static double[] we = {0.2, 0.3, 0.4};
+    static double[] wagi = {0.3, 0.2, 0.1, 0.5};
+
+    static double skalar(double[] we, double[] wagi){
+        double sum = 0;
+        for (int i = 0; i < we.Length; i++){
+            sum += we[i] * wagi[i];
+        }
+        sum += wagi[wagi.Length-1];
+        return sum;
+    }
+
+    static void Main(){
+        Console.WriteLine(skalar(we, wagi));
+    }
+}
+
