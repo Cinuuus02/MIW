@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel;
 
 class Osobnik{
     public string Cb;
@@ -50,7 +49,7 @@ class Program{
             }
             var os_wybr = sklad[0];
             for (int i = 1; i < TurRozm; i++){
-                if (sklad[i].Ocena > os_wybr.Ocena){
+                if (sklad[i].Ocena < os_wybr.Ocena){
                     os_wybr = sklad[i];
                 }
             }
@@ -115,7 +114,7 @@ class Program{
         static Osobnik najlepszy(Osobnik[] osobniki){
             var najlepszy = osobniki[0];
             for (int i = 1; i < populacja; i++){
-                if (osobniki[i].Ocena > najlepszy.Ocena){
+                if (osobniki[i].Ocena < najlepszy.Ocena){
                     najlepszy = osobniki[i];
                 }
             }
@@ -135,23 +134,24 @@ class Program{
         // dekodowanie pa pb pc
         // obliczanie funkcji przystosowania
         for (int i = 0; i < populacja; i++){
+            osobniki[i].Ocena = 0;
             for (int j = 0; j < parametry; j++){
-                osobniki[i].Parametr[j] = Math.Round(Dekodowanie(osobniki[i].Cb.Substring(j * LBnP, LBnP)), 2);
+                osobniki[i].Parametr[j] = Dekodowanie(osobniki[i].Cb.Substring(j * LBnP, LBnP));
             }
             for (int j = 0; j < x.Length; j++){
                 double f_x = osobniki[i].Parametr[0]*Math.Sin(osobniki[i].Parametr[1]*x[j]+osobniki[i].Parametr[2]);
                 osobniki[i].Ocena += Math.Pow(y[j] - f_x, 2);
             }
-            
+            Console.WriteLine("");
         }
 
         Console.WriteLine("Generacja 0:");
-        Console.WriteLine("Najlepszy osobnik: "+najlepszy(osobniki).Ocena);
+        Console.WriteLine("Najlepszy osobnik: "+Math.Round(najlepszy(osobniki).Ocena, 2));
         Console.WriteLine("Srednia ocena: " + Math.Round(srednia(osobniki), 2));
 
         for (int g = 0; g < generacje; g++){
             Console.WriteLine($"\nGeneracja {g + 1}:");
-
+            Console.WriteLine("");
             // nowa pula
             Osobnik[] nowa_pula = new Osobnik[populacja];
 
@@ -168,11 +168,13 @@ class Program{
             nowa_pula[populacja - 1] = najlepszy(osobniki);
 
             // wymiana starej na nowa
+
             osobniki = nowa_pula;
 
             for (int i = 0; i < populacja; i++){
+                osobniki[i].Ocena = 0;
                 for (int j = 0; j < parametry; j++){
-                    osobniki[i].Parametr[j] = Math.Round(Dekodowanie(osobniki[i].Cb.Substring(j * LBnP, LBnP)), 2);
+                    osobniki[i].Parametr[j] = Dekodowanie(osobniki[i].Cb.Substring(j * LBnP, LBnP));
                 }
                 for (int j = 0; j < x.Length; j++){
                     double f_x = osobniki[i].Parametr[0]*Math.Sin(osobniki[i].Parametr[1]*x[j]+osobniki[i].Parametr[2]);
@@ -180,7 +182,7 @@ class Program{
                 }
                 
             }
-            Console.WriteLine("Najlepszy osobnik: "+najlepszy(osobniki).Ocena);
+            Console.WriteLine("Najlepszy osobnik: "+Math.Round(najlepszy(osobniki).Ocena, 2));
             Console.WriteLine("Srednia ocena: " + Math.Round(srednia(osobniki), 2));
         }
     }
