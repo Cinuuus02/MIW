@@ -1,20 +1,217 @@
 using System;
 
-class Program{
-    static double[] we = {0.2, 0.3, 0.4};
-    static double[] wagi = {0.3, 0.2, 0.1, 0.5};
+class Osobnik{
+    public string Cb;
+    public double[] Parametr;
+    public double Ocena;
 
-    static double skalar(double[] we, double[] wagi){
-        double sum = 0;
-        for (int i = 0; i < we.Length; i++){
-            sum += we[i] * wagi[i];
-        }
-        sum += wagi[wagi.Length-1];
-        return sum;
-    }
-
-    static void Main(){
-        Console.WriteLine(skalar(we, wagi));
+    public Osobnik(string cb, double[] parametr, double ocena){
+        Cb = cb;
+        Parametr = parametr;
+        Ocena = ocena;
     }
 }
 
+class Program{
+    static int LBnP = 4;
+    static double ZDMin = -10;
+    static double ZDMax = 10;
+    static double ZD = ZDMax - ZDMin;
+    static int TurRozm = 3;
+    static int populacja = 13;
+    static int parametry = 9;
+    static double[][] x = {
+        new double[] {0, 0},
+        new double[] {0, 1},
+        new double[] {1, 0},
+        new double[] {1, 1}
+    };
+    static double[] y = {0, 1, 1, 0};
+
+    static void Main(){
+        Random rand = new Random();
+
+        int generacje = 50000;
+
+        static double Dekodowanie(string cb){
+            int ctmp = 0;
+            int b = 0;
+            for (int p = LBnP - 1; p >= 0; p--){
+                ctmp += int.Parse(cb[p].ToString()) * (int)Math.Pow(2, b);
+                b++;
+            }
+            double pm = ZDMin + ctmp / (Math.Pow(2, LBnP) - 1) * ZD;
+            return pm;
+        }
+
+        static Osobnik Turniej(Osobnik[] osobniki){
+            Random rand = new Random();
+            Osobnik[] sklad = new Osobnik[TurRozm];
+            for (int i = 0; i < TurRozm; i++){
+                int index = rand.Next(osobniki.Length);
+                sklad[i] = osobniki[index];
+            }
+            var os_wybr = sklad[0];
+            for (int i = 1; i < TurRozm; i++){
+                if (sklad[i].Ocena < os_wybr.Ocena){
+                    os_wybr = sklad[i];
+                }
+            }
+            return new Osobnik(os_wybr.Cb, os_wybr.Parametr, os_wybr.Ocena);
+        }
+
+        static Osobnik[] Mutacja(Osobnik[] nowa_pula){
+            Random rand = new Random();
+            for (int i = 4; i < populacja - 1; i++){
+                int b_punkt = rand.Next(0, LBnP * parametry);
+                string cb = nowa_pula[i].Cb;
+                char[] mutacja_cb = cb.ToCharArray();
+                mutacja_cb[b_punkt] = mutacja_cb[b_punkt] == '0' ? '1' : '0';
+                nowa_pula[i].Cb = new string(mutacja_cb);
+            }
+            return nowa_pula;
+        }
+
+        static Osobnik[] Krzyzowanie(Osobnik[] nowa_pula){
+            int[] ktore = {0, 1, 2, 3, 8, 9, nowa_pula.Length - 3, nowa_pula.Length-2};
+            Random rand = new Random();
+
+            for (int k = 0; k < ktore.Length; k=k+2){
+                int a=ktore[k];
+                int b=ktore[k+1];
+                if (nowa_pula[a] == null || nowa_pula[b] == null) 
+                continue;
+
+                int b_ciecie = rand.Next(0, LBnP * parametry-1);
+                string cba = nowa_pula[a].Cb;
+                string cbb = nowa_pula[b].Cb;
+                char[] krzyzowanie_cba = cba.ToCharArray();
+                char[] krzyzowanie_cbb = cbb.ToCharArray();
+                char[] temp_a = new char[LBnP * parametry];
+                char[] temp_b = new char[LBnP * parametry];
+                for(int i=0; i < b_ciecie; i++){
+                    temp_a[i] = krzyzowanie_cba[i];
+                    temp_b[i] = krzyzowanie_cbb[i];
+                }
+                for(int i=b_ciecie; i < LBnP * parametry; i++){
+                    temp_a[i] = krzyzowanie_cbb[i];
+                    temp_b[i] = krzyzowanie_cba[i];
+                }
+                nowa_pula[a].Cb = new string(temp_a);
+                nowa_pula[b].Cb = new string(temp_b);
+            }
+            return nowa_pula;
+        }
+
+        static double srednia(Osobnik[] osobniki){
+            double suma = 0;
+            for (int i = 0; i < populacja; i++){
+                suma += osobniki[i].Ocena;
+            }
+            return suma / populacja;
+        }
+
+        static Osobnik najlepszy(Osobnik[] osobniki){
+            var najlepszy = osobniki[0];
+            for (int i = 1; i < populacja; i++){
+                if (osobniki[i].Ocena < najlepszy.Ocena){
+                    najlepszy = osobniki[i];
+                }
+            }
+            return najlepszy;
+        }
+
+        // aktywacyjna sigma
+        static double Sigma(double x){
+            double e = 2.71828182845904;
+            double wynik = 1 / (1 + Math.Pow(e, -x));
+            return wynik;
+        }
+
+        // skalary
+        static double Skalar(double[] we, double[] parametry){
+            double sum = 0;
+            for (int i = 0; i < we.Length; i++){
+                sum += we[i] * parametry[i];
+            }
+            sum += parametry[parametry.Length - 1];
+            return sum;
+        }
+
+        static double Siec(double[] parametry, double[] wejscie){
+            double[] neuron1 = {wejscie[0], wejscie[1]};
+            double[] n1_parametry = {parametry[1], parametry[2], parametry[0]};
+            double n1 = Sigma(Skalar(neuron1, n1_parametry));
+
+            double[] neuron2 = { wejscie[0], wejscie[1] };
+            double[] n2_parametry = {parametry[4], parametry[5], parametry[3]};
+            double n2 = Sigma(Skalar(neuron2, n2_parametry));
+
+            double[] we = {n1,n2};
+            double[] we_parametry = {parametry[7], parametry[8], parametry[6]};
+            double wy = Sigma(Skalar(we, we_parametry));
+
+            return wy;
+        }
+
+        // tworzenie populacji
+        Osobnik[] osobniki = new Osobnik[populacja];
+        for (int i = 0; i < populacja; i++){
+            string cb = "";
+            for (int j = 0; j < LBnP * parametry; j++){
+                cb += rand.Next(0, 2);
+            }
+            osobniki[i] = new Osobnik(cb, new double[parametry], new double());
+        }
+
+        // obliczanie funkcji przystosowania
+        for (int i = 0; i < populacja; i++){
+            osobniki[i].Ocena = 0;
+            for (int j = 0; j < parametry; j++){
+                osobniki[i].Parametr[j] = Dekodowanie(osobniki[i].Cb.Substring(j * LBnP, LBnP));
+            }
+            for (int j = 0; j < x.Length; j++){
+                double f_x = Siec(osobniki[i].Parametr, x[j]);
+                osobniki[i].Ocena += Math.Pow(y[j] - f_x, 2);
+            }
+            Console.WriteLine("");
+        }
+
+        Console.WriteLine("Generacja 0:");
+        Console.WriteLine("Najlepszy osobnik: "+Math.Round(najlepszy(osobniki).Ocena, 5));
+        Console.WriteLine("Srednia ocena: " + Math.Round(srednia(osobniki), 5));
+
+        for (int g = 0; g < generacje; g++){
+            Console.WriteLine($"\nGeneracja {g + 1}:");
+            Console.WriteLine("");
+            // nowa pula
+            Osobnik[] nowa_pula = new Osobnik[populacja];
+
+            // turniej
+            for (int i = 0; i < populacja - 1; i++){
+                nowa_pula[i] = Turniej(osobniki);
+            }
+
+            nowa_pula = Krzyzowanie(nowa_pula);
+            nowa_pula = Mutacja(nowa_pula);
+
+            // hot deck
+            nowa_pula[populacja - 1] = najlepszy(osobniki);
+
+            osobniki = nowa_pula;
+
+            for (int i = 0; i < populacja; i++){
+                osobniki[i].Ocena = 0;
+                for (int j = 0; j < parametry; j++){
+                    osobniki[i].Parametr[j] = Dekodowanie(osobniki[i].Cb.Substring(j * LBnP, LBnP));
+                }
+                for (int j = 0; j < x.Length; j++){
+                    double f_x = Siec(osobniki[i].Parametr, x[j]);
+                    osobniki[i].Ocena += Math.Pow(y[j] - f_x, 2);
+                }
+            }
+            Console.WriteLine("Najlepszy osobnik: "+Math.Round(najlepszy(osobniki).Ocena, 5));
+            Console.WriteLine("Srednia ocena: " + Math.Round(srednia(osobniki), 5));
+        }
+    }
+}
