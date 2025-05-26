@@ -1,0 +1,32 @@
+using System;
+using System.IO;
+
+class Probka
+{
+    public double[] Atrybut;
+}
+
+class Program
+{
+    static void Main()
+    {
+        string[] wiersze = File.ReadAllLines("/Users/xsinus999/Documents/Algorithm/MIW/knn/probki.txt");
+        int liczbaProbek = wiersze.Length;
+        Probka[] probki = new Probka[liczbaProbek];
+
+        for (int i = 0; i < liczbaProbek; i++)
+        {
+            string[] elementy = wiersze[i].Trim().Split('\t');
+            Probka p = new Probka();
+            p.Atrybut = new double[elementy.Length];
+
+            for (int j = 0; j < elementy.Length; j++)
+            {
+                double.TryParse(elementy[j], out p.Atrybut[j]);
+            }
+
+            probki[i] = p;
+        }
+        
+    }
+}
