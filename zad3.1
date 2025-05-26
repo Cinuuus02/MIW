@@ -8,15 +8,25 @@ class Probka
 
 class Program
 {
+    static double normalizuj(double oryginalna, double min, double max)
+    {
+        double wynik = (oryginalna - min) / (max - min);
+        return wynik;
+    }
+
+    public delegate double Metryka(double[] v1, double[] v2, int liczbaAtrybutow);
+
     static void Main()
     {
-        string[] wiersze = File.ReadAllLines("/Users/xsinus999/Documents/Algorithm/MIW/knn/probki.txt");
+        int k = 3;
+
+        string[] wiersze = File.ReadAllLines("./probki.txt");
         int liczbaProbek = wiersze.Length;
         Probka[] probki = new Probka[liczbaProbek];
 
         for (int i = 0; i < liczbaProbek; i++)
         {
-            string[] elementy = wiersze[i].Trim().Split('\t');
+            string[] elementy = wiersze[i].Trim().Replace("   ", " ").Split(' ', '\t');
             Probka p = new Probka();
             p.Atrybut = new double[elementy.Length];
 
@@ -24,9 +34,37 @@ class Program
             {
                 double.TryParse(elementy[j], out p.Atrybut[j]);
             }
-
             probki[i] = p;
         }
-        
+        int liczbaAtrybutow = probki[0].Atrybut.Length - 1;
+        double[] min = new double[liczbaAtrybutow];
+        double[] max = new double[liczbaAtrybutow];
+        for (int i = 0; i < liczbaAtrybutow; i++)
+        {
+            min[i] = probki[0].Atrybut[i];
+            max[i] = probki[0].Atrybut[i];
+        }
+        foreach (Probka p in probki)
+        {
+            for (int i = 0; i < liczbaAtrybutow; i++)
+            {
+                if (p.Atrybut[i] < min[i])
+                {
+                    min[i] = p.Atrybut[i];
+                }
+                if (p.Atrybut[i] > max[i])
+                {
+                    max[i] = p.Atrybut[i];
+                }
+            }
+        }
+
+        foreach (Probka p in probki)
+        {
+            for (int i = 0; i < liczbaAtrybutow; i++)
+            {
+                p.Atrybut[i] = normalizuj(p.Atrybut[i], min[i], max[i]);
+            }
+        }
     }
 }
