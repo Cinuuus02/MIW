@@ -13,14 +13,111 @@ class Program
         double wynik = (oryginalna - min) / (max - min);
         return wynik;
     }
+    public delegate double MetrykaDelegate(double[] a, double[] b);
+    public static class Metryka
+    {
+        public static double Manhattan(double[] a, double[] b)
+        {
+            double suma = 0;
+            for (int i = 0; i < a.Length - 1; i++)
+                suma += Math.Abs(a[i] - b[i]);
+            return suma;
+        }
 
-    public delegate double Metryka(double[] v1, double[] v2, int liczbaAtrybutow);
+        public static double Euklidesowa(double[] a, double[] b)
+        {
+            double suma = 0;
+            for (int i = 0; i < a.Length - 1; i++)
+                suma += Math.Pow(a[i] - b[i], 2);
+            return Math.Sqrt(suma);
+        }
+    }
+
+    static int Knn(Probka testowana, Probka[] probki, int k, MetrykaDelegate metoda, int liczbaAtrybutow)
+    {
+        double[] odleglosci = new double[probki.Length - 1];
+        double[] klasy = new double[probki.Length - 1];
+        int i = 0;
+        foreach (Probka p in probki)
+        {
+            if (p == testowana)
+            {
+                continue;
+            }
+            else
+            {
+                double odleglosc = metoda(testowana.Atrybut, p.Atrybut);
+                odleglosci[i] = odleglosc;
+                klasy[i] = p.Atrybut[liczbaAtrybutow];
+                i++;
+            }
+        }
+        int sl = odleglosci.Length;
+
+        for (int j = 0; j < sl - 1; j++)
+        {
+            for (int l = 0; l < sl - 1 - j; l++)
+            {
+                if (odleglosci[l] > odleglosci[l + 1])
+                {
+                    double tempDystans = odleglosci[l];
+                    odleglosci[l] = odleglosci[l + 1];
+                    odleglosci[l + 1] = tempDystans;
+
+                    double tempKlasa = klasy[l];
+                    klasy[l] = klasy[l + 1];
+                    klasy[l + 1] = tempKlasa;
+                }
+            }
+        }
+        double[] sasiedzi = new double[k];
+        for (int j = 0; j < k; j++)
+        {
+            sasiedzi[j] = klasy[j];
+        }
+        Dictionary<double, int> licznik = new Dictionary<double, int>();
+        foreach (var s in sasiedzi)
+        {
+            if (licznik.ContainsKey(s))
+                licznik[s]++;
+            else
+                licznik[s] = 1;
+        }
+        double podobny = sasiedzi[0];
+        int glosy = 0;
+        bool remis = false;
+        foreach (var l in licznik)
+        {
+            if (l.Value > glosy)
+            {
+                glosy = l.Value;
+                podobny = l.Key;
+                remis = false;
+            }
+            else if (l.Value == glosy)
+            {
+                remis = true;
+            }
+        }
+        int wynik = (int)podobny;
+        if (remis)
+        {
+            return -1;
+        }
+        else
+        {
+            return wynik;
+        }
+    }
+
 
     static void Main()
     {
-        int k = 3;
+        int k = 5;
 
-        string[] wiersze = File.ReadAllLines("./probki.txt");
+        var metody = typeof(Metryka).GetMethods().Where(m => m.ReturnType == typeof(double) && m.GetParameters().Length == 2 && m.GetParameters()[0].ParameterType == typeof(double[]) && m.GetParameters()[1].ParameterType == typeof(double[])).ToArray();
+
+        string[] wiersze = File.ReadAllLines("probki.txt");
         int liczbaProbek = wiersze.Length;
         Probka[] probki = new Probka[liczbaProbek];
 
@@ -66,5 +163,17 @@ class Program
                 p.Atrybut[i] = normalizuj(p.Atrybut[i], min[i], max[i]);
             }
         }
+        var delegat = (MetrykaDelegate)Delegate.CreateDelegate(typeof(MetrykaDelegate), metody[0]);
+        double licznik = 0;
+        foreach (Probka p in probki)
+        {
+            if (p.Atrybut[4] == Knn(p, probki, k, metoda, liczbaAtrybutow))
+                licznik++;
+        }
+        Console.WriteLine($"Skutecznosc: {licznik / probki.Length * 100} %");
     }
 }
+
+//cb.DataSource = Metryka;
+//cb.DisplayMember = "Name";
+//Metryka m = (Metryka)Delegate.CreateDelegate(typeof(Metryka), cb.SelectedItem);
